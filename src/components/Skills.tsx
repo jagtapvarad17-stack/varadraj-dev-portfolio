@@ -1,43 +1,59 @@
 import { useState } from "react";
+import { 
+  Code2, 
+  Database, 
+  Globe, 
+  Smartphone, 
+  Wrench,
+  FileCode,
+  Layout,
+  Server,
+  Terminal,
+  GitBranch,
+  Box,
+  Layers,
+  Cpu,
+  MonitorSmartphone
+} from "lucide-react";
 
 type SkillCategory = "all" | "languages" | "frontend" | "backend" | "mobile" | "tools";
 
 interface Skill {
   name: string;
-  level: number;
+  icon: React.ReactNode;
   category: SkillCategory;
 }
 
 const skills: Skill[] = [
   // Languages
-  { name: "Python", level: 85, category: "languages" },
-  { name: "Java", level: 90, category: "languages" },
-  { name: "JavaScript", level: 95, category: "languages" },
-  { name: "C++", level: 75, category: "languages" },
+  { name: "Python", icon: <FileCode className="w-8 h-8" />, category: "languages" },
+  { name: "Java", icon: <Code2 className="w-8 h-8" />, category: "languages" },
+  { name: "JavaScript", icon: <Terminal className="w-8 h-8" />, category: "languages" },
+  { name: "C++", icon: <Cpu className="w-8 h-8" />, category: "languages" },
   
   // Frontend
-  { name: "React.js", level: 92, category: "frontend" },
-  { name: "HTML5", level: 95, category: "frontend" },
-  { name: "CSS3", level: 90, category: "frontend" },
-  { name: "Bootstrap", level: 85, category: "frontend" },
+  { name: "React.js", icon: <Layers className="w-8 h-8" />, category: "frontend" },
+  { name: "HTML5", icon: <Layout className="w-8 h-8" />, category: "frontend" },
+  { name: "CSS3", icon: <Globe className="w-8 h-8" />, category: "frontend" },
+  { name: "Bootstrap", icon: <Box className="w-8 h-8" />, category: "frontend" },
   
   // Backend
-  { name: "Node.js", level: 90, category: "backend" },
-  { name: "Express.js", level: 88, category: "backend" },
-  { name: "Django REST", level: 80, category: "backend" },
-  { name: "MongoDB", level: 85, category: "backend" },
-  { name: "MySQL", level: 82, category: "backend" },
+  { name: "Node.js", icon: <Server className="w-8 h-8" />, category: "backend" },
+  { name: "Express.js", icon: <Server className="w-8 h-8" />, category: "backend" },
+  { name: "Django REST", icon: <Database className="w-8 h-8" />, category: "backend" },
+  { name: "MongoDB", icon: <Database className="w-8 h-8" />, category: "backend" },
+  { name: "MySQL", icon: <Database className="w-8 h-8" />, category: "backend" },
   
   // Mobile
-  { name: "Android (Java)", level: 88, category: "mobile" },
-  { name: "Retrofit", level: 80, category: "mobile" },
+  { name: "Android (Java)", icon: <Smartphone className="w-8 h-8" />, category: "mobile" },
+  { name: "Retrofit", icon: <MonitorSmartphone className="w-8 h-8" />, category: "mobile" },
   
   // Tools
-  { name: "Git", level: 90, category: "tools" },
-  { name: "GitHub", level: 92, category: "tools" },
-  { name: "Postman", level: 88, category: "tools" },
-  { name: "MongoDB Compass", level: 85, category: "tools" },
-  { name: "Android Studio", level: 90, category: "tools" },
+  { name: "Git", icon: <GitBranch className="w-8 h-8" />, category: "tools" },
+  { name: "GitHub", icon: <GitBranch className="w-8 h-8" />, category: "tools" },
+  { name: "Postman", icon: <Wrench className="w-8 h-8" />, category: "tools" },
+  { name: "MongoDB Compass", icon: <Database className="w-8 h-8" />, category: "tools" },
+  { name: "Android Studio", icon: <Smartphone className="w-8 h-8" />, category: "tools" },
 ];
 
 const categories: { key: SkillCategory; label: string }[] = [
@@ -88,29 +104,19 @@ const Skills = () => {
         </div>
 
         {/* Skills Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 max-w-5xl mx-auto">
           {filteredSkills.map((skill, index) => (
             <div
               key={skill.name}
-              className="glass-card rounded-xl p-5 hover:border-primary/30 transition-all duration-300 group"
+              className="glass-card rounded-xl p-6 hover:border-primary/50 transition-all duration-300 group flex flex-col items-center justify-center text-center hover:scale-105"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-foreground group-hover:text-primary transition-colors">
-                  {skill.name}
-                </h4>
-                <span className="text-sm text-primary font-medium">
-                  {skill.level}%
-                </span>
+              <div className="text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
+                {skill.icon}
               </div>
-              
-              {/* Progress bar */}
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700 skill-bar"
-                  style={{ width: `${skill.level}%` }}
-                />
-              </div>
+              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                {skill.name}
+              </span>
             </div>
           ))}
         </div>
