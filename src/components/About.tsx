@@ -21,11 +21,11 @@ const strengths = [
     title: "AR Technology",
     description: "Augmented Reality integration for immersive user experiences",
   },
-  {
-    icon: Sparkles,
-    title: "Clean Code & Optimization",
-    description: "Performance-focused code with best practices & standards",
-  },
+  // {
+  //   icon: Sparkles,
+  //   title: "Clean Code & Optimization",
+  //   description: "Performance-focused code with best practices & standards",
+  // },
 ];
 
 const About = () => {

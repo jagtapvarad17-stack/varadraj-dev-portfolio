@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExternalLink, Github, Smartphone, Globe, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+
 type ProjectCategory = "all" | "web" | "android" | "ar";
 
 interface Project {
@@ -159,7 +160,7 @@ const Projects = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                {/* <div className="flex gap-3">
                   <Button
                     size="sm"
                     variant="outline"
@@ -175,7 +176,7 @@ const Projects = () => {
                     <ExternalLink className="w-4 h-4" />
                     Live Demo
                   </Button>
-                </div>
+                </div> */}
               </div>
             </div>
           ))}

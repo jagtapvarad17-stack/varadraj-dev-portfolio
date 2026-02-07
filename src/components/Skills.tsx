@@ -14,7 +14,9 @@ import {
   Layers,
   Cpu,
   MonitorSmartphone
-} from "lucide-react";
+} from "lucide-react"
+import Lottie from "lottie-react";
+import pythonAnimation from "@/assets/python.json";;
 
 type SkillCategory = "all" | "languages" | "frontend" | "backend" | "mobile" | "tools";
 

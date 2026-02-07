@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import emailjs from "@emailjs/browser";
 
 const Contact = () => {
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
@@ -25,30 +28,56 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          time: new Date().toLocaleString(),
+          year: new Date().getFullYear(),
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
 
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for reaching out. I'll get back to you soon!",
-    });
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out. I'll get back to you soon.",
+      });
 
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setIsSubmitting(false);
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
     {
       icon: Mail,
       label: "Email",
-      value: "varadrajjagtap@gmail.com",
-      href: "mailto:varadrajjagtap@gmail.com",
+      value: "jagtapvarad16@gmail.com",
+      href: "mailto:jagtapvarad16@gmail.com",
     },
     {
       icon: Phone,
       label: "Phone",
-      value: "+91 XXXXX XXXXX",
-      href: "tel:+91XXXXXXXXXX",
+      value: "+91 96999 66488",
+      href: "tel:+919699966488",
     },
     {
       icon: MapPin,
@@ -62,19 +91,18 @@ const Contact = () => {
     {
       icon: Github,
       label: "GitHub",
-      href: "https://github.com/varadrajjagtap",
+      href: "https://github.com/jagtapvarad17-stack",
     },
     {
       icon: Linkedin,
       label: "LinkedIn",
-      href: "https://linkedin.com/in/varadrajjagtap",
+      href: "https://www.linkedin.com/in/varadraj-jagtap",
     },
   ];
 
   return (
     <section id="contact" className="py-24 relative">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <div className="text-center mb-16">
           <p className="text-primary font-medium mb-2">Get In Touch</p>
           <h2 className="text-3xl md:text-4xl font-bold">
@@ -83,154 +111,96 @@ const Contact = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Contact Info */}
+          {/* Left */}
           <div>
-            <h3 className="text-2xl font-semibold text-foreground mb-6">
+            <h3 className="text-2xl font-semibold mb-6">
               Let's work together
             </h3>
-            <p className="text-muted-foreground mb-8 leading-relaxed">
-              I'm always open to discussing new projects, creative ideas, or
-              opportunities to be part of your vision. Feel free to reach out
-              through any of the channels below.
-            </p>
 
-            {/* Contact Details */}
             <div className="space-y-4 mb-8">
               {contactInfo.map((info) => (
-                <div
-                  key={info.label}
-                  className="flex items-center gap-4"
-                >
+                <div key={info.label} className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <info.icon className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{info.label}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {info.label}
+                    </p>
                     {info.href ? (
                       <a
                         href={info.href}
-                        className="text-foreground hover:text-primary transition-colors font-medium"
+                        className="font-medium hover:text-primary"
                       >
                         {info.value}
                       </a>
                     ) : (
-                      <p className="text-foreground font-medium">{info.value}</p>
+                      <p className="font-medium">{info.value}</p>
                     )}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Social Links */}
-            <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect with me
-              </p>
-              <div className="flex gap-3">
-                {socialLinks.map((social) => (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-12 h-12 glass-card rounded-lg flex items-center justify-center hover:bg-primary/20 hover:border-primary/30 transition-all group"
-                  >
-                    <social.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </a>
-                ))}
-              </div>
+            <div className="flex gap-3">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 glass-card rounded-lg flex items-center justify-center hover:border-primary/30"
+                >
+                  <social.icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Contact Form */}
+          {/* Form */}
           <div className="glass-card rounded-2xl p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="name"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Your Name
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    required
-                    className="bg-secondary/50 border-border focus:border-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Your Email
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="john@example.com"
-                    required
-                    className="bg-secondary/50 border-border focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="subject"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Subject
-                </label>
-                <Input
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  placeholder="Project Inquiry"
-                  required
-                  className="bg-secondary/50 border-border focus:border-primary"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="message"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Message
-                </label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Tell me about your project..."
-                  rows={5}
-                  required
-                  className="bg-secondary/50 border-border focus:border-primary resize-none"
-                />
-              </div>
+              <Input
+                name="name"
+                placeholder="Your Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                name="email"
+                type="email"
+                placeholder="Your Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                name="subject"
+                placeholder="Subject"
+                value={formData.subject}
+                onChange={handleChange}
+                required
+              />
+              <Textarea
+                name="message"
+                placeholder="Your Message"
+                rows={5}
+                value={formData.message}
+                onChange={handleChange}
+                required
+              />
 
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+                className="w-full gap-2"
               >
                 {isSubmitting ? (
                   "Sending..."
                 ) : (
                   <>
-                    Send Message
-                    <Send className="w-4 h-4" />
+                    Send Message <Send className="w-4 h-4" />
                   </>
                 )}
               </Button>

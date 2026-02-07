@@ -5,7 +5,7 @@ const certifications = [
     title: "MERN Stack Full Stack Development",
     issuer: "Udemy",
     color: "from-purple-500 to-pink-500",
-  },
+  },/*
   {
     title: "Python Programming",
     issuer: "HackerRank",
@@ -15,7 +15,7 @@ const certifications = [
     title: "SQL Certification",
     issuer: "HackerRank",
     color: "from-blue-500 to-cyan-500",
-  },
+  },*/
 ];
 
 const Certifications = () => {

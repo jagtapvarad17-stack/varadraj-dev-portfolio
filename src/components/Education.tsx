@@ -4,14 +4,14 @@ const educationData = [
   {
     degree: "B.Tech in Information Technology",
     institution: "Walchand College of Engineering, Sangli",
-    period: "2021 - Present",
+    period: "2025 - Present",
     description:
       "Pursuing Bachelor's degree with focus on software development, algorithms, and modern web technologies.",
   },
   {
     degree: "Diploma in Computer Engineering",
     institution: "Government Polytechnic, Miraj",
-    period: "2018 - 2021",
+    period: "2022 - 2025",
     description:
       "Completed diploma with strong foundation in computer science fundamentals and programming.",
   },

@@ -68,7 +68,7 @@ const Hero = () => {
             style={{ animationDelay: "0.6s" }}
           >
             <a
-              href="https://github.com/varadrajjagtap"
+              href="https://github.com/jagtapvarad17-stack"
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 glass-card rounded-full hover:bg-primary/20 transition-colors group"
@@ -76,7 +76,7 @@ const Hero = () => {
               <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </a>
             <a
-              href="https://linkedin.com/in/varadrajjagtap"
+              href="https://www.linkedin.com/in/varadraj-jagtap"
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 glass-card rounded-full hover:bg-primary/20 transition-colors group"
@@ -84,7 +84,7 @@ const Hero = () => {
               <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </a>
             <a
-              href="mailto:varadrajjagtap@gmail.com"
+              href="mailto:jagtapvarad16@gmail.com"
               className="p-3 glass-card rounded-full hover:bg-primary/20 transition-colors group"
             >
               <Mail className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
