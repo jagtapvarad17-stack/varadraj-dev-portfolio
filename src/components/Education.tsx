@@ -1,4 +1,6 @@
+import React from "react";
 import { GraduationCap, Calendar } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const educationData = [
   {
@@ -18,11 +20,13 @@ const educationData = [
 ];
 
 const Education = () => {
+  const sectionRef = useScrollAnimation<HTMLElement>(".scroll-animate");
+
   return (
-    <section id="education" className="py-24 relative">
+    <section id="education" className="py-24 relative" ref={sectionRef}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 scroll-animate scroll-fade-up">
           <p className="text-primary font-medium mb-2">My Journey</p>
           <h2 className="text-3xl md:text-4xl font-bold">
             <span className="gradient-text">Education</span>
@@ -38,7 +42,8 @@ const Education = () => {
             {educationData.map((edu, index) => (
               <div
                 key={index}
-                className="relative pl-20 pb-12 last:pb-0"
+                className="relative pl-20 pb-12 last:pb-0 scroll-animate scroll-fade-left"
+                style={{ transitionDelay: `${0.1 + index * 0.15}s` }}
               >
                 {/* Timeline dot */}
                 <div className="absolute left-6 top-2 w-5 h-5 rounded-full bg-background border-2 border-primary glow-effect" />

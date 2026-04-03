@@ -7,10 +7,22 @@ const Hero = () => {
       id="home"
       className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20"
     >
-      {/* Background glow effects */}
-      <div className="absolute inset-0 bg-glow-gradient opacity-50" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      {/* Spline 3D Orb Background */}
+      <div className="absolute inset-0 z-0" style={{ pointerEvents: "none" }}>
+        <iframe
+          src="https://my.spline.design/orb-WOhGA96N2Q81qCacAtrLi8f7/"
+          frameBorder="0"
+          width="100%"
+          height="100%"
+          title="3D Orb Background"
+          style={{ pointerEvents: "none" }}
+        />
+      </div>
+
+      {/* Subtle overlay glow effects on top of Spline */}
+      <div className="absolute inset-0 bg-glow-gradient opacity-20 z-[1]" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse z-[1]" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000 z-[1]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto">

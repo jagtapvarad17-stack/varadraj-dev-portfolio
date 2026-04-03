@@ -1,4 +1,6 @@
-import { Code2, Server, Smartphone, Box, Sparkles } from "lucide-react";
+import React from "react";
+import { Code2, Server, Smartphone, Box } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const strengths = [
   {
@@ -21,21 +23,18 @@ const strengths = [
     title: "AR Technology",
     description: "Augmented Reality integration for immersive user experiences",
   },
-  // {
-  //   icon: Sparkles,
-  //   title: "Clean Code & Optimization",
-  //   description: "Performance-focused code with best practices & standards",
-  // },
 ];
 
 const About = () => {
+  const sectionRef = useScrollAnimation<HTMLElement>(".scroll-animate");
+
   return (
-    <section id="about" className="py-24 relative">
+    <section id="about" className="py-24 relative" ref={sectionRef}>
       <div className="absolute inset-0 bg-glow-gradient opacity-30" />
-      
+
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 scroll-animate scroll-fade-up">
           <p className="text-primary font-medium mb-2">Get To Know</p>
           <h2 className="text-3xl md:text-4xl font-bold">
             About <span className="gradient-text">Me</span>
@@ -44,7 +43,10 @@ const About = () => {
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Bio */}
-          <div className="glass-card rounded-2xl p-8">
+          <div
+            className="glass-card rounded-2xl p-8 scroll-animate scroll-fade-left"
+            style={{ transitionDelay: "0.1s" }}
+          >
             <h3 className="text-xl font-semibold mb-4 text-foreground">
               Professional Bio
             </h3>
@@ -77,8 +79,8 @@ const About = () => {
             {strengths.map((strength, index) => (
               <div
                 key={strength.title}
-                className="glass-card rounded-xl p-6 hover:border-primary/30 transition-all duration-300 group"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="glass-card rounded-xl p-6 hover:border-primary/30 transition-all duration-300 group scroll-animate scroll-scale-in"
+                style={{ transitionDelay: `${0.15 + index * 0.1}s` }}
               >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <strength.icon className="w-6 h-6 text-primary" />

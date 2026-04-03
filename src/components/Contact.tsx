@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Github, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import emailjs from "@emailjs/browser";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const Contact = () => {
   const { toast } = useToast();
+  const sectionRef = useScrollAnimation<HTMLElement>(".scroll-animate");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -101,9 +104,10 @@ const Contact = () => {
   ];
 
   return (
-    <section id="contact" className="py-24 relative">
+    <section id="contact" className="py-24 relative" ref={sectionRef}>
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        {/* Section Header */}
+        <div className="text-center mb-16 scroll-animate scroll-fade-up">
           <p className="text-primary font-medium mb-2">Get In Touch</p>
           <h2 className="text-3xl md:text-4xl font-bold">
             Contact <span className="gradient-text">Me</span>
@@ -111,15 +115,22 @@ const Contact = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Left */}
-          <div>
+          {/* Left — Contact Info */}
+          <div
+            className="scroll-animate scroll-fade-left"
+            style={{ transitionDelay: "0.1s" }}
+          >
             <h3 className="text-2xl font-semibold mb-6">
               Let's work together
             </h3>
 
             <div className="space-y-4 mb-8">
-              {contactInfo.map((info) => (
-                <div key={info.label} className="flex items-center gap-4">
+              {contactInfo.map((info, index) => (
+                <div
+                  key={info.label}
+                  className="flex items-center gap-4 scroll-animate scroll-fade-left"
+                  style={{ transitionDelay: `${0.2 + index * 0.1}s` }}
+                >
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <info.icon className="w-5 h-5 text-primary" />
                   </div>
@@ -142,7 +153,10 @@ const Contact = () => {
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div
+              className="flex gap-3 scroll-animate scroll-fade-left"
+              style={{ transitionDelay: "0.55s" }}
+            >
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -158,7 +172,10 @@ const Contact = () => {
           </div>
 
           {/* Form */}
-          <div className="glass-card rounded-2xl p-8">
+          <div
+            className="glass-card rounded-2xl p-8 scroll-animate scroll-fade-right"
+            style={{ transitionDelay: "0.15s" }}
+          >
             <form onSubmit={handleSubmit} className="space-y-6">
               <Input
                 name="name"

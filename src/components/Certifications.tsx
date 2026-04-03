@@ -1,4 +1,6 @@
+import React from "react";
 import { Award, ExternalLink } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const certifications = [
   {
@@ -19,13 +21,15 @@ const certifications = [
 ];
 
 const Certifications = () => {
+  const sectionRef = useScrollAnimation<HTMLElement>(".scroll-animate");
+
   return (
-    <section id="certifications" className="py-24 relative">
+    <section id="certifications" className="py-24 relative" ref={sectionRef}>
       <div className="absolute inset-0 bg-glow-gradient opacity-20" />
-      
+
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 scroll-animate scroll-fade-up">
           <p className="text-primary font-medium mb-2">Achievements</p>
           <h2 className="text-3xl md:text-4xl font-bold">
             <span className="gradient-text">Certifications</span>
@@ -37,7 +41,8 @@ const Certifications = () => {
           {certifications.map((cert, index) => (
             <div
               key={cert.title}
-              className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 group cursor-pointer"
+              className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 group cursor-pointer scroll-animate scroll-scale-in"
+              style={{ transitionDelay: `${0.1 + index * 0.12}s` }}
             >
               {/* Badge Icon */}
               <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${cert.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
