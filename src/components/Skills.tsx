@@ -16,8 +16,6 @@ import {
   Cpu,
   MonitorSmartphone
 } from "lucide-react";
-import Lottie from "lottie-react";
-import pythonAnimation from "@/assets/python.json";;
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 type SkillCategory = "all" | "languages" | "frontend" | "backend" | "mobile" | "tools";
@@ -60,14 +58,7 @@ const skills: Skill[] = [
   { name: "Android Studio", icon: <Smartphone className="w-8 h-8" />, category: "tools" },
 ];
 
-const categories: { key: SkillCategory; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "languages", label: "Languages" },
-  { key: "frontend", label: "Frontend" },
-  { key: "backend", label: "Backend & APIs" },
-  { key: "mobile", label: "Mobile" },
-  { key: "tools", label: "Tools" },
-];
+
 
 const Skills = () => {
   const [activeCategory, setActiveCategory] = useState<SkillCategory>("all");
@@ -89,26 +80,6 @@ const Skills = () => {
           <h2 className="text-3xl md:text-4xl font-bold">
             Technical <span className="gradient-text">Skills</span>
           </h2>
-        </div>
-
-        {/* Category Filter */}
-        <div
-          className="flex flex-wrap justify-center gap-3 mb-12 scroll-animate scroll-fade-up"
-          style={{ transitionDelay: "0.1s" }}
-        >
-          {categories.map((category) => (
-            <button
-              key={category.key}
-              onClick={() => setActiveCategory(category.key)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                activeCategory === category.key
-                  ? "bg-primary text-primary-foreground"
-                  : "glass-card text-muted-foreground hover:text-foreground hover:border-primary/30"
-              }`}
-            >
-              {category.label}
-            </button>
-          ))}
         </div>
 
         {/* Skills Grid */}
