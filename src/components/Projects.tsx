@@ -65,7 +65,7 @@ const projects: Project[] = [
     icon: Globe,
     headerBg: "bg-[#123a12]",
     github: "https://github.com/jagtapvarad17-stack/APKMalwareDetection",
-    demo: "http://localhost:5173",
+    demo: "https://github.com/jagtapvarad17-stack/APKMalwareDetection",
   },
 
   {
@@ -83,7 +83,7 @@ const projects: Project[] = [
     techStack: ["Android (Java)", "Firebase", "RecyclerView", "REST API"],
     icon: Smartphone,
     headerBg: "bg-[#2a125a]",
-    github: "https://github.com/YOUR_TEACHCONNECT_LINK",
+    github: "https://github.com/adityapatole908-hue/TeachConnect",
   },
 ];
 
@@ -123,7 +123,7 @@ const Projects = () => {
               <div className={`p-8 ${project.headerBg} relative overflow-hidden transition-colors duration-500`}>
                 {/* Subtle Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-                
+
                 <div className="flex items-center gap-6 relative z-10">
                   <div className="p-4 rounded-2xl bg-black/30 backdrop-blur-md border border-white/10 shadow-lg">
                     <project.icon className="w-8 h-8 text-white" />
@@ -141,7 +141,7 @@ const Projects = () => {
 
               {/* Content Body */}
               <div className="p-10 flex flex-col h-full bg-gradient-to-b from-transparent to-black/20">
-                
+
                 {/* Description */}
                 <p className="text-[#a1a1aa] leading-relaxed mb-10 text-[15px] font-medium">
                   {project.description}
