@@ -1,5 +1,7 @@
 import { ArrowRight, Github, Linkedin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import BallpitBackground from "@/components/BallpitBackground";
+
 
 const Hero = () => {
   return (
@@ -7,17 +9,10 @@ const Hero = () => {
       id="home"
       className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20"
     >
-      {/* Spline 3D Orb Background */}
-      <div className="absolute inset-0 z-0" style={{ pointerEvents: "none" }}>
-        <iframe
-          src="https://my.spline.design/orb-WOhGA96N2Q81qCacAtrLi8f7/"
-          frameBorder="0"
-          width="100%"
-          height="100%"
-          title="3D Orb Background"
-          style={{ pointerEvents: "none" }}
-        />
-      </div>
+      
+<div className="absolute inset-0 z-0">
+  <BallpitBackground />
+</div>
 
       {/* Subtle overlay glow effects on top of Spline */}
       <div className="absolute inset-0 bg-glow-gradient opacity-20 z-[1]" />
