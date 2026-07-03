@@ -17,6 +17,9 @@ import {
   MonitorSmartphone
 } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import MagicBentoCard from "@/components/ui/MagicBentoCard";
+
+const GLOW = "0, 208, 255";
 
 type SkillCategory = "all" | "languages" | "frontend" | "backend" | "mobile" | "tools";
 
@@ -58,8 +61,6 @@ const skills: Skill[] = [
   { name: "Android Studio", icon: <Smartphone className="w-8 h-8" />, category: "tools" },
 ];
 
-
-
 const Skills = () => {
   const [activeCategory, setActiveCategory] = useState<SkillCategory>("all");
   const sectionRef = useScrollAnimation<HTMLElement>(".scroll-animate");
@@ -87,15 +88,26 @@ const Skills = () => {
           {filteredSkills.map((skill, index) => (
             <div
               key={skill.name}
-              className="glass-card rounded-xl p-6 hover:border-primary/50 transition-all duration-300 group flex flex-col items-center justify-center text-center hover:scale-105 scroll-animate scroll-scale-in"
+              className="scroll-animate scroll-scale-in"
               style={{ transitionDelay: `${0.05 * index}s` }}
             >
-              <div className="text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
-                {skill.icon}
-              </div>
-              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                {skill.name}
-              </span>
+              <MagicBentoCard
+                glowColor={GLOW}
+                spotlightRadius={180}
+                particleCount={6}
+                enableSpotlight
+                enableBorderGlow
+                enableStars
+                clickEffect
+                className="rounded-xl p-6 group flex flex-col items-center justify-center text-center hover:scale-105 transition-transform duration-300 h-full"
+              >
+                <div className="text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
+                  {skill.icon}
+                </div>
+                <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                  {skill.name}
+                </span>
+              </MagicBentoCard>
             </div>
           ))}
         </div>

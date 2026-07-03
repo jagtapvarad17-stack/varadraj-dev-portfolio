@@ -1,6 +1,9 @@
 import React from "react";
 import { GraduationCap, Calendar } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import MagicBentoCard from "@/components/ui/MagicBentoCard";
+
+const GLOW = "0, 208, 255";
 
 const educationData = [
   {
@@ -48,8 +51,17 @@ const Education = () => {
                 {/* Timeline dot */}
                 <div className="absolute left-6 top-2 w-5 h-5 rounded-full bg-background border-2 border-primary glow-effect" />
 
-                {/* Content card */}
-                <div className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all duration-300">
+                {/* Content card – MagicBento */}
+                <MagicBentoCard
+                  glowColor={GLOW}
+                  spotlightRadius={420}
+                  particleCount={10}
+                  enableSpotlight
+                  enableBorderGlow
+                  enableStars
+                  clickEffect
+                  className="rounded-2xl p-6"
+                >
                   <div className="flex items-start justify-between flex-wrap gap-4 mb-4">
                     <div>
                       <h3 className="text-xl font-semibold text-foreground mb-1">
@@ -68,7 +80,7 @@ const Education = () => {
                     </div>
                   </div>
                   <p className="text-muted-foreground">{edu.description}</p>
-                </div>
+                </MagicBentoCard>
               </div>
             ))}
           </div>

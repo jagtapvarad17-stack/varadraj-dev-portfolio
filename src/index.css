@@ -275,3 +275,44 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.5);
 }
+
+/* =============================================
+   MagicBentoCard – ripple & base styles
+   ============================================= */
+
+/* Click-ripple burst */
+@keyframes magic-bento-ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.8;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    width: 240px;
+    height: 240px;
+    opacity: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.magic-bento-ripple {
+  animation: magic-bento-ripple 0.75s ease-out forwards;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Base card shell – inherits site glass-card look */
+.magic-bento-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  cursor: default;
+  will-change: border-color, box-shadow;
+}
+
