@@ -51,7 +51,7 @@ const About = () => {
             className="scroll-animate scroll-fade-left w-full h-[600px]"
             style={{ transitionDelay: "0.1s" }}
           >
-            <Lanyard position={[0, 0, 13]} gravity={[0, -40, 0]} />
+            <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} fov={12} />
           </div>
 
           {/* Strengths Grid */}

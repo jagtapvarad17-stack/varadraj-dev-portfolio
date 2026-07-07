@@ -1,74 +1,90 @@
 /* eslint-disable react/no-unknown-property */
 /**
- * Lanyard – physics-engine-free implementation
+ * Lanyard – Rapier physics implementation (matches original React Bits demo)
  *
- * Uses a custom spring-pendulum (damped harmonic oscillator) simulated inside
- * useFrame. No @react-three/rapier required – just @react-three/fiber + drei +
- * meshline. The card hangs from an invisible ceiling anchor, swings once on
- * mount, and decays to a complete stop thanks to the DAMPING_C constant.
- * The user can grab and fling the card; angular velocity is preserved on release.
+ * Physics:  @react-three/rapier  (RigidBody + rope joints + spherical joint)
+ * Rope:     meshline (MeshLineGeometry / MeshLineMaterial)
+ * Card:     custom canvas-generated front/back texture composited onto card.glb atlas
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, extend, useFrame } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
+import {
+  BallCollider,
+  CuboidCollider,
+  Physics,
+  RigidBody,
+  useRopeJoint,
+  useSphericalJoint,
+} from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 
-import cardGLB       from '@/assets/lanyard/card.glb';
-import lanyardBand   from '@/assets/lanyard/lanyard.png';
-import profilePhoto  from '@/assets/lanyard/profile.jpg';
+import cardGLB      from '@/assets/lanyard/card.glb';
+import lanyardBand  from '@/assets/lanyard/lanyard.png';
+import profilePhoto from '@/assets/lanyard/profile.jpg';
 
 import * as THREE from 'three';
 import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared constants
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 const BLANK_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-const FRONT_UV_RECT = { x: 0,   y: 0, w: 0.5, h: 0.755 };
-const BACK_UV_RECT  = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
+const FRONT_UV_RECT = { x: 0,   y: 0, w: 0.5,  h: 0.755 };
+const BACK_UV_RECT  = { x: 0.5, y: 0, w: 0.5,  h: 0.757 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Spring-pendulum physics constants
-//
-//   Equation of motion:  θ'' = -K·θ - C·θ'
-//   Critical damping   :  C  = 2·√K  (≈ 3.46 for K=3)
-//   We use C < critical → slight oscillation → card swings and settles.
-// ─────────────────────────────────────────────────────────────────────────────
-const SPRING_K   = 3.0;   // spring stiffness
-const DAMPING_C  = 2.2;   // damping coefficient  (< 2√3 ≈ 3.46 → underdamped)
-const ROPE_LEN   = 4.2;   // rope length (scene units)
-const INIT_THETA = 0.28;  // initial swing angle (≈ 16°) – card appears to "settle"
-const MAX_THETA  = 1.3;   // maximum drag angle (radians)
-
-// Anchor = invisible ceiling hook. Y is above the canvas visible area so the
-// rope appears to extend off the top of the frame (natural hanging look).
-const ANCHOR = new THREE.Vector3(-0.4, 4.2, 0);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PendulumScene – 3D inner component (suspense boundary inside Canvas)
-// ─────────────────────────────────────────────────────────────────────────────
-interface SceneProps {
+// ─── Band (inner physics component) ─────────────────────────────────────────
+interface BandProps {
   isMobile    : boolean;
   frontDataUrl: string;
   backDataUrl : string;
   lanyardWidth: number;
+  maxSpeed?   : number;
+  minSpeed?   : number;
 }
 
-function PendulumScene({ isMobile, frontDataUrl, backDataUrl, lanyardWidth }: SceneProps) {
-  /* ── Asset loading ─────────────────────────────────────────────── */
+function Band({
+  isMobile,
+  frontDataUrl,
+  backDataUrl,
+  lanyardWidth,
+  maxSpeed = 50,
+  minSpeed = 0,
+}: BandProps) {
+  // Refs for rope rigid-body segments + card
+  const band  = useRef<THREE.Mesh>(null);
+  const fixed = useRef<any>(null);
+  const j1    = useRef<any>(null);
+  const j2    = useRef<any>(null);
+  const j3    = useRef<any>(null);
+  const card  = useRef<any>(null);
+
+  // Scratch vectors (stable across frames — no allocation in useFrame)
+  const vec = new THREE.Vector3();
+  const ang = new THREE.Vector3();
+  const rot = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+
+  const segmentProps = {
+    type        : 'dynamic' as const,
+    canSleep    : true,
+    colliders   : false,
+    angularDamping : 4,
+    linearDamping  : 4,
+  };
+
+  // ── Assets ─────────────────────────────────────────────────────────────────
   const { nodes, materials } = useGLTF(cardGLB) as any;
   const bandTex  = useTexture(lanyardBand);
-  const frontTex = useTexture(frontDataUrl);
-  const backTex  = useTexture(backDataUrl);
+  const frontTex = useTexture(frontDataUrl || BLANK_PIXEL);
+  const backTex  = useTexture(backDataUrl  || BLANK_PIXEL);
 
-  /* ── Composite front/back textures onto the GLB atlas ─────────── */
+  // Composite front/back canvas textures onto the GLB atlas
   const cardMap = useMemo(() => {
     const baseMap = materials.base.map;
-    if (!frontTex.image && !backTex.image) return baseMap;
+    if (!frontDataUrl && !backDataUrl) return baseMap;
 
     const baseImg = baseMap.image as HTMLImageElement;
     const W = baseImg.width;
@@ -96,174 +112,165 @@ function PendulumScene({ isMobile, frontDataUrl, backDataUrl, lanyardWidth }: Sc
     if (backTex.image)  drawFitted(backTex.image  as HTMLImageElement, BACK_UV_RECT);
 
     const tex = new THREE.CanvasTexture(offscreen);
-    tex.colorSpace   = THREE.SRGBColorSpace;
-    tex.flipY        = baseMap.flipY;
-    tex.anisotropy   = 16;
-    tex.needsUpdate  = true;
+    tex.colorSpace  = THREE.SRGBColorSpace;
+    tex.flipY       = baseMap.flipY;
+    tex.anisotropy  = 16;
+    tex.needsUpdate = true;
     return tex;
-  }, [frontTex, backTex, materials.base.map]);
+  }, [frontDataUrl, backDataUrl, frontTex, backTex, materials.base.map]);
 
   bandTex.wrapS = bandTex.wrapT = THREE.RepeatWrapping;
 
-  /* ── Pendulum state (refs → no re-renders per frame) ───────────── */
-  const theta       = useRef(INIT_THETA); // current angle  (rad)
-  const omega       = useRef(0.0);        // angular velocity (rad/s)
-  const dragging    = useRef(false);
-  const prevDrag    = useRef({ theta: INIT_THETA, ms: 0 });
+  // ── Rope joints (chain: fixed → j1 → j2 → j3 →[spherical]→ card) ──────────
+  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
+  useRopeJoint(j1,    j2, [[0, 0, 0], [0, 0, 0], 1]);
+  useRopeJoint(j2,    j3, [[0, 0, 0], [0, 0, 0], 1]);
+  useSphericalJoint(j3, card, [[0, 0, 0], [0, 1.5, 0]]);
 
-  /* ── Three.js refs ─────────────────────────────────────────────── */
-  const cardRef = useRef<THREE.Group>(null);
-  const ropeRef = useRef<THREE.Mesh>(null);
+  // ── Drag state ─────────────────────────────────────────────────────────────
+  const [dragged, drag]   = useState<THREE.Vector3 | false>(false);
+  const [hovered, hover]  = useState(false);
 
-  const curve = useMemo(
+  useEffect(() => {
+    if (hovered) {
+      document.body.style.cursor = dragged ? 'grabbing' : 'grab';
+      return () => void (document.body.style.cursor = 'auto');
+    }
+  }, [hovered, dragged]);
+
+  // ── Catmull-Rom curve for the rope band ────────────────────────────────────
+  const [curve] = useState(
     () => new THREE.CatmullRomCurve3([
-      ANCHOR.clone(),
       new THREE.Vector3(),
       new THREE.Vector3(),
-    ]),
-    []
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+    ])
   );
+  curve.curveType = 'chordal';
 
-  /* ── Per-frame physics + rendering ─────────────────────────────── */
-  useFrame((_state, delta) => {
-    if (!cardRef.current || !ropeRef.current) return;
-
-    // Clamp delta to avoid huge steps after tab switches
-    const dt = Math.min(delta, 1 / 30);
-
-    if (!dragging.current) {
-      // Damped spring-pendulum:  θ'' = -K·θ  -  C·θ'
-      omega.current += (-SPRING_K * theta.current - DAMPING_C * omega.current) * dt;
-      theta.current += omega.current * dt;
-
-      // Snap to rest once negligible
-      if (Math.abs(theta.current) < 0.0003 && Math.abs(omega.current) < 0.0003) {
-        theta.current = 0;
-        omega.current = 0;
-      }
+  // ── Per-frame physics update ───────────────────────────────────────────────
+  useFrame((state, delta) => {
+    if (dragged) {
+      // Unproject pointer into world space and move card (kinematic)
+      vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
+      dir.copy(vec).sub(state.camera.position).normalize();
+      vec.add(dir.multiplyScalar(state.camera.position.length()));
+      [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
+      card.current?.setNextKinematicTranslation({
+        x: vec.x - (dragged as THREE.Vector3).x,
+        y: vec.y - (dragged as THREE.Vector3).y,
+        z: vec.z - (dragged as THREE.Vector3).z,
+      });
     }
 
-    // Card world position (pendulum tip)
-    const cx = ANCHOR.x + Math.sin(theta.current) * ROPE_LEN;
-    const cy = ANCHOR.y - Math.cos(theta.current) * ROPE_LEN;
+    if (fixed.current) {
+      // Lerp intermediate joints toward their physical position (smooth rope)
+      [j1, j2].forEach(ref => {
+        if (!ref.current.lerped)
+          ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
+        const dist = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
+        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + dist * (maxSpeed - minSpeed)));
+      });
 
-    cardRef.current.position.set(cx, cy, 0);
-    // Card tilts naturally with swing direction
-    cardRef.current.rotation.z = theta.current * 0.25;
+      // Update catmull-rom curve control points
+      curve.points[0].copy(j3.current.translation());
+      curve.points[1].copy(j2.current.lerped);
+      curve.points[2].copy(j1.current.lerped);
+      curve.points[3].copy(fixed.current.translation());
+      (band.current as any).geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
 
-    // ── Rope catenary curve ────────────────────────────────────────
-    // Top attachment point is on the card's clip (slightly above card center)
-    const cardTop = new THREE.Vector3(cx, cy + 1.25, 0);
-    // Rope sag increases with swing amplitude (realistic physics look)
-    const sag = Math.abs(theta.current) * 0.22 + 0.10;
-    curve.points[0].copy(ANCHOR);
-    curve.points[1].set(
-      (ANCHOR.x + cardTop.x) * 0.5,
-      (ANCHOR.y + cardTop.y) * 0.5 - sag,
-      0
-    );
-    curve.points[2].copy(cardTop);
-    (ropeRef.current as any).geometry.setPoints(
-      curve.getPoints(isMobile ? 12 : 28)
-    );
+      // Damp card's y-axis spin so it doesn't spin forever
+      ang.copy(card.current.angvel());
+      rot.copy(card.current.rotation());
+      card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
+    }
   });
 
-  /* ── Drag interaction ──────────────────────────────────────────── */
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    dragging.current = true;
-    omega.current    = 0;
-    const t = Math.atan2(e.point.x - ANCHOR.x, Math.max(ANCHOR.y - e.point.y, 0.1));
-    prevDrag.current = { theta: t, ms: performance.now() };
-  };
-
-  const handlePointerMove = (e: any) => {
-    if (!dragging.current) return;
-    const dx = e.point.x - ANCHOR.x;
-    const dy = Math.max(ANCHOR.y - e.point.y, 0.1);
-    const newTheta = Math.max(-MAX_THETA, Math.min(MAX_THETA, Math.atan2(dx, dy)));
-    const now = performance.now();
-    const elapsed = (now - prevDrag.current.ms) / 1000;
-    // Track angular velocity so release feels natural
-    if (elapsed > 0) {
-      omega.current = (newTheta - prevDrag.current.theta) / elapsed;
-    }
-    theta.current    = newTheta;
-    prevDrag.current = { theta: newTheta, ms: now };
-  };
-
-  const handlePointerUp = (e: any) => {
-    if (!dragging.current) return;
-    (e.target as Element).releasePointerCapture?.(e.pointerId);
-    dragging.current = false;
-    // Clamp release velocity to a safe range
-    omega.current = Math.max(-7, Math.min(7, omega.current));
-  };
-
-  /* ── JSX ────────────────────────────────────────────────────────── */
+  // ── JSX ────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Lanyard band / rope */}
-      <mesh ref={ropeRef}>
+      {/* Anchor + 3 rope joints + card rigid bodies */}
+      <group position={[0, 4, 0]}>
+        <RigidBody ref={fixed} {...segmentProps} type="fixed" />
+        <RigidBody ref={j1} position={[0.5, 0, 0]} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody ref={j2} position={[1, 0, 0]} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody ref={j3} position={[1.5, 0, 0]} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody
+          ref={card}
+          position={[2, 0, 0]}
+          {...segmentProps}
+          type={dragged ? 'kinematicPosition' : 'dynamic'}
+        >
+          <CuboidCollider args={[0.8, 1.125, 0.01]} />
+          <group
+            scale={2.25}
+            position={[0, -1.2, -0.05]}
+            onPointerOver={() => hover(true)}
+            onPointerOut={() => hover(false)}
+            onPointerUp={e => {
+              e.target.releasePointerCapture(e.pointerId);
+              drag(false);
+            }}
+            onPointerDown={e => {
+              e.target.setPointerCapture(e.pointerId);
+              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+            }}
+          >
+            <mesh geometry={nodes.card.geometry}>
+              <meshPhysicalMaterial
+                map={cardMap}
+                map-anisotropy={16}
+                clearcoat={isMobile ? 0 : 1}
+                clearcoatRoughness={0.15}
+                roughness={0.9}
+                metalness={0.8}
+              />
+            </mesh>
+            <mesh geometry={nodes.clip.geometry}  material={materials.metal} material-roughness={0.3} />
+            <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
+          </group>
+        </RigidBody>
+      </group>
+
+      {/* Rope / lanyard band */}
+      <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
           color="white"
           depthTest={false}
-          resolution={isMobile ? [500, 1000] : [1000, 1000]}
+          resolution={isMobile ? [1000, 2000] : [1000, 1000]}
           useMap
           map={bandTex}
           repeat={[-4, 1]}
           lineWidth={lanyardWidth}
         />
       </mesh>
-
-      {/* ID Card */}
-      <group
-        ref={cardRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-      >
-        <group scale={2.25} position={[0, -1.2, -0.05]}>
-          <mesh geometry={nodes.card.geometry}>
-            <meshPhysicalMaterial
-              map={cardMap}
-              map-anisotropy={16}
-              clearcoat={isMobile ? 0 : 1}
-              clearcoatRoughness={0.15}
-              roughness={0.9}
-              metalness={0.8}
-            />
-          </mesh>
-          <mesh geometry={nodes.clip.geometry}  material={materials.metal} material-roughness={0.3} />
-          <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
-        </group>
-      </group>
     </>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LanyardProps
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Public Lanyard component ─────────────────────────────────────────────────
 interface LanyardProps {
-  /** Camera Z position – controls card apparent size */
-  position?   : [number, number, number];
-  fov?        : number;
-  transparent?: boolean;
+  position?    : [number, number, number];
+  gravity?     : [number, number, number];
+  fov?         : number;
+  transparent? : boolean;
   lanyardWidth?: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lanyard – public component
-// ─────────────────────────────────────────────────────────────────────────────
 export default function Lanyard({
-  position    = [0, 0, 20],
-  fov         = 20,
-  transparent = true,
-  lanyardWidth = 1.2,
+  position     = [0, 0, 30],
+  gravity      = [0, -40, 0],
+  fov          = 20,
+  transparent  = true,
+  lanyardWidth = 1,
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
@@ -271,18 +278,17 @@ export default function Lanyard({
   const [frontDataUrl, setFrontDataUrl] = useState<string | null>(null);
   const [backDataUrl,  setBackDataUrl]  = useState<string | null>(null);
 
-  /* ── Canvas-based dynamic ID card texture generation ─────────── */
+  // ── Canvas-based dynamic ID card texture generation ───────────────────────
   useEffect(() => {
     const img = new Image();
     img.src = profilePhoto;
     img.onload = () => {
-      // ── Front face ──────────────────────────────────────────────
+      // ── Front face ────────────────────────────────────────────────────────
       const canvasFront = document.createElement('canvas');
       canvasFront.width  = 512;
       canvasFront.height = 768;
       const ctxFront = canvasFront.getContext('2d');
       if (ctxFront) {
-        // Futuristic Dark Background Gradient
         const grad = ctxFront.createLinearGradient(0, 0, 0, 768);
         grad.addColorStop(0,   '#0a101d');
         grad.addColorStop(0.5, '#050a12');
@@ -290,27 +296,24 @@ export default function Lanyard({
         ctxFront.fillStyle = grad;
         ctxFront.fillRect(0, 0, 512, 768);
 
-        // Tech Circuit Aesthetics / Cyber Lines
         ctxFront.strokeStyle = 'rgba(0, 208, 255, 0.15)';
         ctxFront.lineWidth = 2;
         ctxFront.beginPath();
-        ctxFront.moveTo(30, 30);  ctxFront.lineTo(120, 30);  ctxFront.lineTo(150, 60);
-        ctxFront.moveTo(482, 30); ctxFront.lineTo(392, 30);  ctxFront.lineTo(362, 60);
-        ctxFront.moveTo(30, 738); ctxFront.lineTo(120, 738); ctxFront.lineTo(150, 708);
-        ctxFront.moveTo(482, 738);ctxFront.lineTo(392, 738); ctxFront.lineTo(362, 708);
+        ctxFront.moveTo(30, 30);   ctxFront.lineTo(120, 30);  ctxFront.lineTo(150, 60);
+        ctxFront.moveTo(482, 30);  ctxFront.lineTo(392, 30);  ctxFront.lineTo(362, 60);
+        ctxFront.moveTo(30, 738);  ctxFront.lineTo(120, 738); ctxFront.lineTo(150, 708);
+        ctxFront.moveTo(482, 738); ctxFront.lineTo(392, 738); ctxFront.lineTo(362, 708);
         ctxFront.stroke();
 
-        // Header Title
         ctxFront.fillStyle = '#00d0ff';
-        ctxFront.font = 'bold 24px sans-serif';
+        ctxFront.font      = 'bold 24px sans-serif';
         ctxFront.textAlign = 'center';
         ctxFront.fillText('WCE IT PORTAL', 256, 70);
 
-        // Holographic Microchip Graphic
         ctxFront.strokeStyle = 'rgba(0, 208, 255, 0.4)';
-        ctxFront.lineWidth = 1.5;
+        ctxFront.lineWidth   = 1.5;
         ctxFront.strokeRect(236, 100, 40, 30);
-        ctxFront.fillStyle = 'rgba(0, 208, 255, 0.1)';
+        ctxFront.fillStyle   = 'rgba(0, 208, 255, 0.1)';
         ctxFront.fillRect(236, 100, 40, 30);
         ctxFront.beginPath();
         ctxFront.moveTo(246, 100); ctxFront.lineTo(246, 130);
@@ -320,7 +323,6 @@ export default function Lanyard({
         ctxFront.moveTo(236, 120); ctxFront.lineTo(276, 120);
         ctxFront.stroke();
 
-        // Profile Photo (Circular Crop)
         const pcx = 256, pcy = 290, radius = 100;
         ctxFront.save();
         ctxFront.beginPath();
@@ -333,17 +335,15 @@ export default function Lanyard({
         ctxFront.drawImage(img, sx, sy, size, size, pcx - radius, pcy - radius, radius * 2, radius * 2);
         ctxFront.restore();
 
-        // Glowing ring
-        ctxFront.strokeStyle  = '#00d0ff';
-        ctxFront.lineWidth    = 4;
-        ctxFront.shadowColor  = '#00d0ff';
-        ctxFront.shadowBlur   = 12;
+        ctxFront.strokeStyle = '#00d0ff';
+        ctxFront.lineWidth   = 4;
+        ctxFront.shadowColor = '#00d0ff';
+        ctxFront.shadowBlur  = 12;
         ctxFront.beginPath();
         ctxFront.arc(pcx, pcy, radius, 0, Math.PI * 2);
         ctxFront.stroke();
         ctxFront.shadowBlur = 0;
 
-        // Name & Role
         ctxFront.fillStyle = '#ffffff';
         ctxFront.font      = 'bold 30px sans-serif';
         ctxFront.fillText('VARADRAJ JAGTAP', 256, 450);
@@ -351,7 +351,6 @@ export default function Lanyard({
         ctxFront.font      = '600 18px sans-serif';
         ctxFront.fillText('FULL STACK DEVELOPER', 256, 485);
 
-        // Details box
         ctxFront.fillStyle   = 'rgba(255,255,255,0.03)';
         ctxFront.fillRect(60, 530, 392, 130);
         ctxFront.strokeStyle = 'rgba(0,208,255,0.2)';
@@ -363,11 +362,10 @@ export default function Lanyard({
         ctxFront.fillText('ROLE TYPE:',   90, 605);
         ctxFront.fillText('INSTITUTION:', 90, 640);
         ctxFront.fillStyle = '#ffffff';
-        ctxFront.fillText('VJ-17-WCE-IT',        210, 570);
-        ctxFront.fillText('ENGINEERING STUDENT',  210, 605);
-        ctxFront.fillText('WCE SANGLI',           210, 640);
+        ctxFront.fillText('VJ-17-WCE-IT',       210, 570);
+        ctxFront.fillText('ENGINEERING STUDENT', 210, 605);
+        ctxFront.fillText('WCE SANGLI',          210, 640);
 
-        // Active badge
         ctxFront.fillStyle   = 'rgba(0,208,255,0.15)';
         ctxFront.fillRect(340, 555, 80, 22);
         ctxFront.strokeStyle = '#00d0ff';
@@ -377,14 +375,13 @@ export default function Lanyard({
         ctxFront.textAlign   = 'center';
         ctxFront.fillText('ACTIVE', 380, 571);
 
-        // Bottom bar
         ctxFront.fillStyle = '#00d0ff';
         ctxFront.fillRect(0, 758, 512, 10);
 
         setFrontDataUrl(canvasFront.toDataURL());
       }
 
-      // ── Back face ───────────────────────────────────────────────
+      // ── Back face ─────────────────────────────────────────────────────────
       const canvasBack = document.createElement('canvas');
       canvasBack.width  = 512;
       canvasBack.height = 768;
@@ -415,9 +412,8 @@ export default function Lanyard({
         ctxBack.fillStyle  = '#8892b0';
         ctxBack.font       = '13px monospace';
         ctxBack.fillText('DEPARTMENT OF INFORMATION TECHNOLOGY', 256, 395);
-        ctxBack.fillText('WCE SANGLI, MAHARASHTRA, INDIA',       256, 420);
+        ctxBack.fillText('WCE SANGLI, MAHARASHTRA, INDIA', 256, 420);
 
-        // Barcode
         ctxBack.fillStyle = '#ffffff';
         ctxBack.fillRect(106, 490, 300, 80);
         ctxBack.fillStyle = '#000000';
@@ -464,14 +460,14 @@ export default function Lanyard({
         }
       >
         <ambientLight intensity={Math.PI} />
-        <Suspense fallback={null}>
-          <PendulumScene
+        <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+          <Band
             isMobile={isMobile}
             frontDataUrl={frontDataUrl}
             backDataUrl={backDataUrl}
             lanyardWidth={lanyardWidth}
           />
-        </Suspense>
+        </Physics>
         <Environment blur={0.75}>
           <Lightformer intensity={2}  color="white" position={[0,  -1,  5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
           <Lightformer intensity={3}  color="white" position={[-1, -1,  1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
